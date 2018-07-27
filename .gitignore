@@ -1,5 +1,7 @@
 tap4fun/data/.DS_Store
 tap4fun/data/*
+tap4fun/code/model/*
+tap4fun/code/summary/*
 .DS_Store
 */__pycache__/
 */*/__pycache__/
