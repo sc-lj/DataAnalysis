@@ -45,7 +45,7 @@ def analysis_level_var(files):
     data.rename(columns={'treatment_acceleraion_add_value':'treatment_acceleration_add_value'},inplace=True)
     print(data.shape)
     variable=data.columns.tolist()
-    depvar=variable[-2:]
+    depvar=variable[-2:]#因变量有category,prediction_pay_price
     new_data=pd.DataFrame()
     X_var=variable[:-2]
 
@@ -185,14 +185,6 @@ def addColumn(files):
 
 
 
-def ra(files):
-    data = pd.read_csv(files, index_col=0)
-    columns = data.columns.tolist()
-    index=columns.index('category')
-    del columns[index]
-    columns.insert(-1,"category")
-    data = data.reindex(columns=columns)
-    data.to_csv(files, float_format="%.5f")
 
 
 if __name__ == '__main__':
@@ -204,6 +196,5 @@ if __name__ == '__main__':
     # addColumn(drop_zero)
 
     # analysis_level_var(drop_zero)
-    ra(tapfun)
     cut_data(tapfun)
 

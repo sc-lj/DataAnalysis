@@ -18,9 +18,10 @@ arg=argument()
 log=log_config(__file__)
 
 class CNN():
-    def __init__(self,height):
+    def __init__(self,height,isClassify):
         self.arg=arg
         self.height=height#
+        self.isClassify=isClassify
         self.input=tf.placeholder(dtype=tf.float32,shape=[None,height,varNum],name='input')
         self.target=tf.placeholder(dtype=tf.float32,shape=[None,1],name='label')
         self.keep_out=tf.placeholder(tf.float32)
@@ -149,9 +150,13 @@ class CNN():
         fcon2=tf.add(tf.matmul(result1,self.weight([10,1])),self.biase([1]))
         fcon2=tf.nn.relu(fcon2)
         fcon2=tf.nn.dropout(fcon2,self.keep_out)
-        self.result = tf.nn.relu(fcon2)
+        if not self.isClassify:
+            self.result = tf.nn.relu(fcon2)
 
-        self.rmse_cost = tf.sqrt(tf.losses.mean_squared_error(self.result, self.target))
+            self.rmse_cost = tf.sqrt(tf.losses.mean_squared_error(self.result, self.target))
+        else:
+            self.result = tf.nn.softmax(fcon2)
+            self.rmse_cost=-tf.reduce_mean(self.target*tf.clip_by_value())
 
 
 def train_model(cnn):
@@ -251,7 +256,7 @@ if __name__ == '__main__':
     varNum=106#自变量总个数
     # 总共需要106个变量，去掉了userid和register_time两个变量
     height=int(math.ceil(float(varNum)/filt))
-    cnn=CNN(height)
+    cnn=CNN(height,isClassify=True)
     # try:
     #     train_model(cnn)
     # except Exception as e:
