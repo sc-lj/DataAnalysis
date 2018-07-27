@@ -1,0 +1,6 @@
+tap4fun/data/.DS_Store
+tap4fun/data/*
+.DS_Store
+*/__pycache__/
+*/*/__pycache__/
+
