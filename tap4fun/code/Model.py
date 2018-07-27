@@ -147,16 +147,12 @@ class CNN():
         fcon1=tf.nn.dropout(fcon1,self.keep_out)
         result1 = tf.nn.relu(fcon1)
 
-        fcon2=tf.add(tf.matmul(result1,self.weight([10,1])),self.biase([1]))
-        fcon2=tf.nn.relu(fcon2)
-        fcon2=tf.nn.dropout(fcon2,self.keep_out)
+        fcon2 = tf.add(tf.matmul(result1, self.weight([10, 1])), self.biase([1]))
+        self.result = tf.nn.relu(fcon2)
         if not self.isClassify:
-            self.result = tf.nn.relu(fcon2)
-
             self.rmse_cost = tf.sqrt(tf.losses.mean_squared_error(self.result, self.target))
         else:
-            self.result = tf.nn.softmax(fcon2)
-            self.rmse_cost=-tf.reduce_mean(self.target*tf.clip_by_value())
+            self.rmse_cost=-tf.reduce_mean(self.target*tf.clip_by_value(self.result,1e-10,1.0))
 
 
 def train_model(cnn):
