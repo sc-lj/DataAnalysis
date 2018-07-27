@@ -68,7 +68,8 @@ def gen_batch(files,batch,predict=False):
     :param batch: 块大小
     :return:
     """
-    shuff(files)
+    if not predict:
+        shuff(files)
     data=pd.read_csv(files,index_col=0,chunksize=batch)
     for da in data:
         matrixs,labels=read_batch(da,predict)

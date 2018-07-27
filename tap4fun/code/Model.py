@@ -214,12 +214,19 @@ def predict_model(cnn):
     out_dir = arg.out_dir
     checkpoints_dir = os.path.abspath(os.path.join(out_dir, 'model'))
     with tf.Session() as sess:
-        saver = tf.train.import_meta_graph(checkpoints_dir+"/model-2300.meta")
+        sess.run(tf.global_variables_initializer())
+        saver=tf.train.Saver()
+        meta=tf.train.get_checkpoint_state(checkpoints_dir)
         # #判断模型是否存在
+        if meta and meta.model_checkpoint_path:
+            saver.restore(sess,meta.model_checkpoint_path)
+        else:
+            raise FileNotFoundError("未保存任何模型")
 
-        saver.restore(sess, tf.train.latest_checkpoint(checkpoints_dir))
+        # saver = tf.train.import_meta_graph(checkpoints_dir+"/model-2300.meta")
+        # saver.restore(sess, tf.train.latest_checkpoint(checkpoints_dir))
 
-        dev_data = gen_batch(tap_fun_test, batch=50000,predict=True)
+        dev_data = gen_batch(tap_fun_test, batch=50,predict=True)
         Y=[]
         while True:
             try:
