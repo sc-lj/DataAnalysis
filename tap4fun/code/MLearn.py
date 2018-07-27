@@ -45,9 +45,9 @@ def analysis_level_var(files):
     data.rename(columns={'treatment_acceleraion_add_value':'treatment_acceleration_add_value'},inplace=True)
     print(data.shape)
     variable=data.columns.tolist()
-    depvar=variable[-1]
+    depvar=variable[-2:]
     new_data=pd.DataFrame()
-    X_var=variable[:-1]
+    X_var=variable[:-2]
 
     for cate in category:
         var_add=cate+category_suffix[0]
@@ -72,10 +72,10 @@ def analysis_level_var(files):
     Y=data[depvar]
     data=pd.concat([X,Y],axis=1)
 
-    decimals=pd.Series([5]*len(decimals_var),index=decimals_var)
-    data=data.round(decimals)
+    # decimals=pd.Series([5]*len(decimals_var),index=decimals_var)
+    # data=data.round(decimals)
     print(data.shape)
-    data.to_csv(tapfun)
+    data.to_csv(tapfun,float_format="%.5f")
 
 
 def cut_data(filename):
@@ -185,15 +185,25 @@ def addColumn(files):
 
 
 
-
-
+def ra(files):
+    data = pd.read_csv(files, index_col=0)
+    columns = data.columns.tolist()
+    index=columns.index('category')
+    del columns[index]
+    columns.insert(-1,"category")
+    data = data.reindex(columns=columns)
+    data.to_csv(files, float_format="%.5f")
 
 
 if __name__ == '__main__':
     # analysis_resource_var(drop_zero)
     # checkColumn('../data/drop_zero.csv')
+
+    """按照下面顺序执行"""
     # check_Row(tap_fun_train)
     # addColumn(drop_zero)
+
     # analysis_level_var(drop_zero)
+    ra(tapfun)
     cut_data(tapfun)
 

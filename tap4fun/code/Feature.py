@@ -6,12 +6,8 @@ except:
     from Script import *
 import pandas as pd
 import numpy as np
-import copy,time,random,math
-from sklearn.preprocessing import StandardScaler,MinMaxScaler
-from sklearn.decomposition import PCA
-from sklearn.feature_selection import VarianceThreshold
+import copy
 from sklearn.utils import shuffle
-import datetime
 
 def change_loc(vector,num,all):
     """
@@ -47,8 +43,8 @@ def read_batch(batch_data,predict=False):
     labels=[]
     for i in range(batch_data.shape[0]):
         if not predict:
-            newda = list(batch_data.iloc[i].values[1:-1])
-            label=[batch_data.iloc[i].values[-1]]
+            newda = list(batch_data.iloc[i].values[1:-2])
+            label=[batch_data.iloc[i].values[-2]]
             labels.append(label)
         else:
             newda = list(batch_data.iloc[i].values[1:])
@@ -59,7 +55,7 @@ def read_batch(batch_data,predict=False):
 def shuff(files):
     data=pd.read_csv(files,index_col=0)
     data = shuffle(data)
-    data.to_csv(files)
+    data.to_csv(files,float_format='%.5f')
 
 def gen_batch(files,batch,predict=False):
     """
@@ -93,7 +89,7 @@ if __name__ == '__main__':
     # feature_matrix(vector)
     # read_csv('../data/revert.csv')
     # gen_batch('../data/revert.csv',6)
-    qa,_=gen_batch(tap_fun_test,8,predict=True)
+    qa,_=gen_batch(train_file,8,predict=False)
     qa.__next__()
 
 

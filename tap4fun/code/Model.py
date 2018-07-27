@@ -2,15 +2,17 @@
 
 import tensorflow as tf
 try:
-    from .Script import *
+    from code.Script import *
+    from code.Feature import *
 except:
     from Script import *
+    from Feature import *
 from functools import reduce
-from Feature import *
+
 from Chat_Warning import *
 import os,math
 import pandas as pd
-
+import numpy as np
 
 arg=argument()
 log=log_config(__file__)
@@ -226,7 +228,7 @@ def predict_model(cnn):
         # saver = tf.train.import_meta_graph(checkpoints_dir+"/model-2300.meta")
         # saver.restore(sess, tf.train.latest_checkpoint(checkpoints_dir))
 
-        dev_data = gen_batch(tap_fun_test, batch=50,predict=True)
+        dev_data = gen_batch(tap_fun_test, batch=10000,predict=True)
         Y=[]
         while True:
             try:
@@ -234,8 +236,9 @@ def predict_model(cnn):
             except StopIteration:
                 break
             y=sess.run([cnn.result],feed_dict={cnn.input:mat,cnn.keep_out:1})
+            y=y[0].flatten().tolist()
             print(y)
-            Y.append(y)
+            Y.extend(y)
         print(len(Y))
         data=pd.read_csv(valid_file,index_col=0)
         new_data=pd.DataFrame(Y,index=data.index,columns=[Depvar])
