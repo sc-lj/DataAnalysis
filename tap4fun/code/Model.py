@@ -232,7 +232,10 @@ def predict_model(cnn):
                 mat, _ = dev_data.__next__()
             except StopIteration:
                 break
-            y=sess.run([cnn.result],feed_dict={cnn.input:mat,cnn.keep_out:1})
+            result=tf.sigmoid(cnn.result)
+            shape=result.shape
+            result=tf.where(tf.less_equal(result,0.5),np.zeros(shape),np.ones(shape))
+            y=sess.run([result],feed_dict={cnn.input:mat,cnn.keep_out:1})
             y=y[0].flatten().tolist()
             print(y)
             Y.extend(y)
