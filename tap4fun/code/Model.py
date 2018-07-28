@@ -13,6 +13,7 @@ from Chat_Warning import *
 import os,math
 import pandas as pd
 import numpy as np
+from sklearn.metrics import roc_auc_score
 
 arg=argument()
 log=log_config(__file__)
@@ -36,6 +37,21 @@ class CNN():
 
     def biase(self,shape):
         return tf.Variable(tf.constant(0.,shape=shape,dtype=tf.float32),name='biase')
+
+    def normal(self,Wx_plus_b):
+        fc_mean, fc_var = tf.nn.moments(
+            Wx_plus_b,
+            axes=[0],  # 想要 normalize 的维度, [0] 代表 batch 维度
+            # 如果是图像数据, 可以传入 [0, 1, 2], 相当于求[batch, height, width] 的均值/方差, 注意不要加入 channel 维度
+        )
+        scale = tf.Variable(tf.ones([self.arg.filter_num]))
+        shift = tf.Variable(tf.zeros([self.arg.filter_num]))
+        epsilon = 0.001
+        Wx_plus_b = tf.nn.batch_normalization(Wx_plus_b, fc_mean, fc_var, shift, scale, epsilon)
+        # 上面那一步, 在做如下事情:
+        # Wx_plus_b = (Wx_plus_b - fc_mean) / tf.sqrt(fc_var + 0.001)
+        # Wx_plus_b = Wx_plus_b * scale + shift
+        return Wx_plus_b
 
     def model(self,norm=False,on_train=True):
         # 第一层卷积
@@ -76,18 +92,7 @@ class CNN():
         biase_shape = [self.arg.filter_num]
         Wx_plus_b=tf.nn.bias_add(convd, self.biase(biase_shape))
         if norm:  # 判断书否是 BN 层
-            fc_mean, fc_var = tf.nn.moments(
-                Wx_plus_b,
-                axes=[0],  # 想要 normalize 的维度, [0] 代表 batch 维度
-                # 如果是图像数据, 可以传入 [0, 1, 2], 相当于求[batch, height, width] 的均值/方差, 注意不要加入 channel 维度
-            )
-            scale = tf.Variable(tf.ones([self.arg.filter_num]))
-            shift = tf.Variable(tf.zeros([self.arg.filter_num]))
-            epsilon = 0.001
-            Wx_plus_b = tf.nn.batch_normalization(Wx_plus_b, fc_mean, fc_var, shift, scale, epsilon)
-            # 上面那一步, 在做如下事情:
-            # Wx_plus_b = (Wx_plus_b - fc_mean) / tf.sqrt(fc_var + 0.001)
-            # Wx_plus_b = Wx_plus_b * scale + shift
+            Wx_plus_b = self.normal(Wx_plus_b)
 
         activate=tf.nn.relu(Wx_plus_b)
         pool=tf.nn.max_pool(activate,ksize=[1,self.arg.filter,self.arg.filter,1],strides=[1,1,1,1],padding='VALID',name='pool-1')
@@ -98,18 +103,7 @@ class CNN():
         biase_shape = [self.arg.filter_num]
         Wx_plus_b=tf.nn.bias_add(convd, self.biase(biase_shape))
         if norm:  # 判断书否是 BN 层
-            fc_mean, fc_var = tf.nn.moments(
-                Wx_plus_b,
-                axes=[0],  # 想要 normalize 的维度, [0] 代表 batch 维度
-                # 如果是图像数据, 可以传入 [0, 1, 2], 相当于求[batch, height, width] 的均值/方差, 注意不要加入 channel 维度
-            )
-            scale = tf.Variable(tf.ones([self.arg.filter_num]))
-            shift = tf.Variable(tf.zeros([self.arg.filter_num]))
-            epsilon = 0.001
-            Wx_plus_b = tf.nn.batch_normalization(Wx_plus_b, fc_mean, fc_var, shift, scale, epsilon)
-            # 上面那一步, 在做如下事情:
-            # Wx_plus_b = (Wx_plus_b - fc_mean) / tf.sqrt(fc_var + 0.001)
-            # Wx_plus_b = Wx_plus_b * scale + shift
+            Wx_plus_b = self.normal(Wx_plus_b)
 
         activate=tf.nn.relu(Wx_plus_b)
         pool1 = tf.nn.max_pool(activate, ksize=[1, self.arg.filter, self.arg.filter, 1], strides=[1, 1, 2, 1], padding='VALID',name='pool-1')
@@ -120,18 +114,7 @@ class CNN():
         biase_shape = [self.arg.filter_num]
         Wx_plus_b=tf.nn.bias_add(convd, self.biase(biase_shape))
         if norm:  # 判断书否是 BN 层
-            fc_mean, fc_var = tf.nn.moments(
-                Wx_plus_b,
-                axes=[0],  # 想要 normalize 的维度, [0] 代表 batch 维度
-                # 如果是图像数据, 可以传入 [0, 1, 2], 相当于求[batch, height, width] 的均值/方差, 注意不要加入 channel 维度
-            )
-            scale = tf.Variable(tf.ones([self.arg.filter_num]))
-            shift = tf.Variable(tf.zeros([self.arg.filter_num]))
-            epsilon = 0.001
-            Wx_plus_b = tf.nn.batch_normalization(Wx_plus_b, fc_mean, fc_var, shift, scale, epsilon)
-            # 上面那一步, 在做如下事情:
-            # Wx_plus_b = (Wx_plus_b - fc_mean) / tf.sqrt(fc_var + 0.001)
-            # Wx_plus_b = Wx_plus_b * scale + shift
+            Wx_plus_b=self.normal(Wx_plus_b)
 
         activate=tf.nn.relu(Wx_plus_b)
         filter=activate.get_shape()[1]
@@ -142,17 +125,24 @@ class CNN():
 
         # 第一个全连接层
         til_vector=tf.reshape(pool2,shape=[-1,product])
-        fcon1=tf.add(tf.matmul(til_vector,self.weight([product,10])),self.biase([10]))
+        fcon1=tf.add(tf.matmul(til_vector,self.weight([product,20])),self.biase([20]))
         fcon1=tf.nn.relu(fcon1)
-        fcon1=tf.nn.dropout(fcon1,self.keep_out)
-        result1 = tf.nn.relu(fcon1)
+        #  dropout 则应当置于 activation layer 之后。
+        result1=tf.nn.dropout(fcon1,self.keep_out)
 
-        fcon2 = tf.add(tf.matmul(result1, self.weight([10, 1])), self.biase([1]))
-        self.result = tf.nn.relu(fcon2)
+        # 第二个全连接层
+        fcon2 = tf.add(tf.matmul(result1, self.weight([20, 5])), self.biase([5]))
+        fcon2=tf.nn.sigmoid(fcon2)
+
         if not self.isClassify:
+            self.result = tf.nn.relu(tf.add(tf.matmul(fcon2, self.weight([5, 1])), self.biase([1])))
             self.rmse_cost = tf.sqrt(tf.losses.mean_squared_error(self.result, self.target))
         else:
-            self.rmse_cost=-tf.reduce_mean(self.target*tf.clip_by_value(self.result,1e-10,1.0))
+            self.result=tf.add(tf.matmul(fcon2, self.weight([5, 1])), self.biase([1]))
+            rmse_cost=tf.nn.sigmoid_cross_entropy_with_logits(labels=self.target,logits=self.result)
+            self.rmse_cost=tf.reduce_mean(rmse_cost)
+            predict=tf.sigmoid(self.result)
+            self.auc_value, self.update_op = tf.metrics.auc(self.target, predict)
 
 
 def train_model(cnn):
@@ -182,16 +172,22 @@ def train_model(cnn):
 
         def train_step(X, Y):
             feed_dict = {cnn.input: X, cnn.target: Y,cnn.keep_out:arg.dropout}
-            _, step, summary, loss = sess.run([optimizer, global_step, loss_summary, cnn.rmse_cost], feed_dict=feed_dict)
-            # print('train step {},loss {:g}'.format( step, loss))
-            log.info('train step {},loss {:g}'.format( step, loss))
+            if cnn.isClassify:
+                _, step, summary, loss, auc_value = sess.run([optimizer, global_step, loss_summary, cnn.rmse_cost, cnn.auc_value], feed_dict=feed_dict)
+                log.info('train step {},loss {:g},auc_score {:f}'.format( step, loss,auc_value))
+            else:
+                _, step, summary, loss= sess.run([optimizer, global_step, loss_summary, cnn.rmse_cost], feed_dict=feed_dict)
+                log.info('train step {},loss {:g}'.format( step, loss))
             train_writer.add_summary(summary, step)
 
         def dev_step(X, Y):
             feed_dict = {cnn.input: X, cnn.target: Y,cnn.keep_out:1}
-            step, summary, loss = sess.run([global_step, loss_summary, cnn.rmse_cost], feed_dict=feed_dict)
-            # print('dev step {},loss {:g}'.format(step, loss))
-            log.info('dev step {},loss {:g}'.format(step, loss))
+            if cnn.isClassify:
+                step, summary, loss ,auc_value= sess.run([global_step, loss_summary, cnn.rmse_cost,cnn.auc_value], feed_dict=feed_dict)
+                log.info('train step {},loss {:g},auc_score {:g}'.format( step, loss,auc_value))
+            else:
+                step, summary, loss = sess.run([global_step, loss_summary, cnn.rmse_cost], feed_dict=feed_dict)
+                log.info('train step {},loss {:g}'.format( step, loss))
             dev_writer.add_summary(summary, step)
 
         meta=tf.train.get_checkpoint_state(checkpoints_dir)
@@ -199,7 +195,7 @@ def train_model(cnn):
         if meta and meta.model_checkpoint_path:
             saver.restore(sess,meta.model_checkpoint_path)
         else:
-            init = tf.global_variables_initializer()
+            init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
             sess.run(init)
 
 
@@ -229,7 +225,7 @@ def predict_model(cnn):
         # saver = tf.train.import_meta_graph(checkpoints_dir+"/model-2300.meta")
         # saver.restore(sess, tf.train.latest_checkpoint(checkpoints_dir))
 
-        dev_data = gen_batch(tap_fun_test, batch=10000,predict=True)
+        dev_data = gen_batch(tap_fun_test, batch=10,predict=True)
         Y=[]
         while True:
             try:
@@ -249,17 +245,18 @@ def predict_model(cnn):
 
 if __name__ == '__main__':
     filt=arg.filter
-    varNum=106#自变量总个数
+    varNum=107#自变量总个数
     # 总共需要106个变量，去掉了userid和register_time两个变量
     height=int(math.ceil(float(varNum)/filt))
     cnn=CNN(height,isClassify=True)
     # try:
-    #     train_model(cnn)
+    train_model(cnn)
+        # send_msg('tap4fun cnn模型已经训练完毕')
     # except Exception as e:
     #     send_msg('tap4fun cnn模型出现错误，%s'%e)
-    # send_msg('tap4fun cnn模型已经训练完毕')
 
-    predict_model(cnn)
+
+    # predict_model(cnn)
 
 
 
