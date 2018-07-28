@@ -249,11 +249,11 @@ if __name__ == '__main__':
     # 总共需要106个变量，去掉了userid和register_time两个变量
     height=int(math.ceil(float(varNum)/filt))
     cnn=CNN(height,isClassify=True)
-    # try:
-    train_model(cnn)
-        # send_msg('tap4fun cnn模型已经训练完毕')
-    # except Exception as e:
-    #     send_msg('tap4fun cnn模型出现错误，%s'%e)
+    try:
+        train_model(cnn)
+        send_msg('tap4fun cnn模型已经训练完毕')
+    except Exception as e:
+        send_msg('tap4fun cnn模型出现错误，%s'%e)
 
 
     # predict_model(cnn)
