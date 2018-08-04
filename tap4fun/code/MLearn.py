@@ -6,12 +6,14 @@ except:
     from Script import *
 import pandas as pd
 import numpy as np
-import copy,time,random,math
-from sklearn.preprocessing import StandardScaler,MinMaxScaler,Normalizer
+import copy,time,random,math,re
+from sklearn.preprocessing import *
 from sklearn.decomposition import PCA
-from sklearn.feature_selection import VarianceThreshold
+from sklearn.feature_selection import SelectKBest
+from scipy.stats import pearsonr
 from sklearn.utils import shuffle
-import datetime
+import xgboost as xgb
+import os
 
 
 scaler=StandardScaler()
@@ -184,6 +186,69 @@ def addColumn(files):
     data.to_csv(files,float_format="%.5f")
 
 
+def xgboostF():
+    traindata, traintarget=getFeature(train_file)
+    validdata,validtarget=getFeature(valid_file)
+    # 加载array格式的数据到xgb中。
+    dtrain = xgb.DMatrix(traindata, label=traintarget)
+    dvalid=xgb.DMatrix(validdata,label=validtarget)
+
+    # 参数
+    param={
+        "objective":"reg:logistic",   # 回归问题
+        "eval_metric":"rmse",         # 采用的损失函数
+        "booster":"gbtree",           # 采用梯度提升树模型
+        "silent":1,                   # 不打印信息
+        "nthread":3,                  # 训练用的线程数
+        'lambda': 2,  # 控制模型复杂度的权重值的L2正则化项参数，参数越大，模型越不容易过拟合。
+        'eta': 0.007,  # 如同学习率
+        "min_child_weight":2,
+        "subsample":0.6,
+        "colsample_bytree":0.5,
+        "scale_pos_weight":0.3
+    }
+
+    evals=[(dtrain,"train"),(dvalid,"val")]
+    bst = xgb.train(params=param,dtrain=dtrain,num_boost_round=200,evals=evals)
+    if not os.path.exists('model/'):
+        os.makedirs('model/')
+    bst.save_model('model/test.model')
+
+def predict():
+    param={
+        "objective":"reg:logistic",   # 回归问题
+        "eval_metric":"rmse",         # 采用的损失函数
+        "booster":"gbtree",           # 采用梯度提升树模型
+        "silent":1,                   # 不打印信息
+        "nthread":3,                  # 训练用的线程数
+        'lambda': 2,  # 控制模型复杂度的权重值的L2正则化项参数，参数越大，模型越不容易过拟合。
+        'eta': 0.007,  # 如同学习率
+        "min_child_weight":2,
+        "subsample":0.6,
+        "colsample_bytree":0.5,
+        "scale_pos_weight":0.3
+    }
+    bst=xgb.Booster(params=param)# 初始化模型
+    bst.load_model('model/test.model')
+
+
+def getFeature(files):
+    data=pd.read_csv(files,index_col=0)
+    columns=data.columns.tolist()
+    invar=columns[1:-2]
+    devar=columns[-1]
+    levelvar=[column for column in  columns if re.match('.+_level',column)]
+
+    invarvalue=data[invar]
+    describe=invarvalue.std()
+    # 删除了自变量的方差小于0.1的变量。考虑到里面的level都是有序变量，所以方差设置的比较小
+    # 当方差阈值设置为0.5的时候，删除了45个变量，这些特征不发散。
+    var=describe[describe.apply(lambda x:True if x>0.5 else False)].index
+
+    varvalue=np.array(data[var].values)
+    target=np.array(data[devar].values)
+    return varvalue,target
+
 
 
 
@@ -192,9 +257,16 @@ if __name__ == '__main__':
     # checkColumn('../data/drop_zero.csv')
 
     """按照下面顺序执行"""
+    # 删除行
     # check_Row(tap_fun_train)
+    # 增加列
     # addColumn(drop_zero)
-
+    # 标准化
     # analysis_level_var(drop_zero)
-    cut_data(tapfun)
+    # 切分数据集
+    # cut_data(tapfun)
+
+    # getFeature(valid_file)
+    xgboostF()
+
 
