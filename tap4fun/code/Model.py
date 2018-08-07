@@ -199,17 +199,17 @@ def train_model(cnn):
             sess.run(init)
 
 
-        for matrix, label in gen_train(train_file, batch=50000,log=log):
+        for matrix, label in gen_train(train_file, batch=30000,log=log,isClassify=cnn.isClassify):
             train_step(matrix, label)
             current_step = tf.train.global_step(sess, global_step)
             if current_step % arg.evaluate_every== 0:
-                dev_data = gen_batch(valid_file, batch=50000)
+                dev_data = gen_batch(valid_file, batch=30000,isClassify=cnn.isClassify)
                 mat, lab = dev_data.__next__()
                 dev_step(mat, lab)
                 path = saver.save(sess, save_path=checkpoint_prefix, global_step=current_step)
                 log.info("Saved model checkpoint to {}\n".format(path))
 
-def predict_model(cnn):
+def predict_model(cnn,isClassify):
     out_dir = arg.out_dir
     checkpoints_dir = os.path.abspath(os.path.join(out_dir, 'model'))
     with tf.Session() as sess:
@@ -225,17 +225,17 @@ def predict_model(cnn):
         # saver = tf.train.import_meta_graph(checkpoints_dir+"/model-2300.meta")
         # saver.restore(sess, tf.train.latest_checkpoint(checkpoints_dir))
 
-        dev_data = gen_batch(tap_fun_test, batch=10,predict=True)
+        dev_data = gen_batch(tap_fun_test, batch=10,predict=True,isClassify=isClassify)
         Y=[]
         while True:
             try:
                 mat, _ = dev_data.__next__()
             except StopIteration:
                 break
-            result=tf.sigmoid(cnn.result)
-            shape=result.shape
-            result=tf.where(tf.less_equal(result,0.5),np.zeros(shape),np.ones(shape))
-            y=sess.run([result],feed_dict={cnn.input:mat,cnn.keep_out:1})
+            # result=tf.sigmoid(cnn.result)
+            # shape=result.shape
+            # result=tf.where(tf.less_equal(result,0.5),np.zeros(shape),np.ones(shape))
+            y=sess.run([cnn.result],feed_dict={cnn.input:mat,cnn.keep_out:1})
             y=y[0].flatten().tolist()
             print(y)
             Y.extend(y)
@@ -250,8 +250,9 @@ if __name__ == '__main__':
     filt=arg.filter
     varNum=107#自变量总个数
     # 总共需要106个变量，去掉了userid和register_time两个变量
+    isClassify = False
     height=int(math.ceil(float(varNum)/filt))
-    cnn=CNN(height,isClassify=True)
+    cnn=CNN(height,isClassify=isClassify)
     try:
         train_model(cnn)
         send_msg('tap4fun cnn模型已经训练完毕')
