@@ -38,13 +38,16 @@ def feature_matrix(vector,num=4):
 
 arg=argument()
 
-def read_batch(batch_data,predict=False):
+def read_batch(batch_data,isClassify,predict=False):
     batch_matrix=[]
     labels=[]
     for i in range(batch_data.shape[0]):
         if not predict:
             newda = list(batch_data.iloc[i].values[1:-2])
-            label=[batch_data.iloc[i].values[-2]]
+            if isClassify:
+                label=[batch_data.iloc[i].values[-2]]
+            else:
+                label=[batch_data.iloc[i].values[-1]]
             labels.append(label)
         else:
             newda = list(batch_data.iloc[i].values[1:])
@@ -57,7 +60,7 @@ def shuff(files):
     data = shuffle(data)
     data.to_csv(files,float_format='%.5f')
 
-def gen_batch(files,batch,predict=False):
+def gen_batch(files,batch,isClassify,predict=False):
     """
     迭代文件数据
     :param files: 文件名
@@ -68,16 +71,15 @@ def gen_batch(files,batch,predict=False):
         shuff(files)
     data=pd.read_csv(files,index_col=0,chunksize=batch)
     for da in data:
-        matrixs,labels=read_batch(da,predict)
+        matrixs,labels=read_batch(da,isClassify,predict)
         matrixs=np.array(matrixs)
-        print(matrixs.shape)
         labels=np.array(labels)
         yield matrixs,labels
 
-def gen_train(files,batch,log):
+def gen_train(files,batch,log,isClassify):
     for epoch in range(arg.epochs):
         log.info('epoch step {}'.format( epoch))
-        for matrixs,labels in gen_batch(files,batch):
+        for matrixs,labels in gen_batch(files,batch,isClassify):
             yield matrixs,labels
 
 
@@ -89,7 +91,6 @@ if __name__ == '__main__':
     # feature_matrix(vector)
     # read_csv('../data/revert.csv')
     # gen_batch('../data/revert.csv',6)
-    qa,_=gen_batch(train_file,8,predict=False)
-    qa.__next__()
-
+    for matrixs, labels in gen_batch(train_file,8,isClassify=False):
+        print(labels)
 

@@ -17,7 +17,7 @@ import os
 
 
 scaler=StandardScaler()
-MinMax=MinMaxScaler(feature_range=(0,10))
+MinMax=MinMaxScaler(feature_range=(0,250))
 normal=Normalizer()
 def analysis_resource_var(files):
     data=pd.read_csv(files,index_col=0)
@@ -62,9 +62,9 @@ def analysis_level_var(files):
         new_data[var_reduce]=data[var_reduce]
 
     # 对值变动范围很大的物品进行标准化
-    std_data = scaler.fit_transform(new_data)
+    # std_data = scaler.fit_transform(new_data)
     #将值压缩到一定范围
-    # std_data=MinMax.fit_transform(new_data)
+    std_data=MinMax.fit_transform(new_data)
     std_data = pd.DataFrame(std_data, index=new_data.index, columns=new_data.columns)
 
     X=data[X_var]
@@ -262,11 +262,11 @@ if __name__ == '__main__':
     # 增加列
     # addColumn(drop_zero)
     # 标准化
-    # analysis_level_var(drop_zero)
+    analysis_level_var(drop_zero)
     # 切分数据集
-    # cut_data(tapfun)
+    cut_data(tapfun)
 
     # getFeature(valid_file)
-    xgboostF()
+    # xgboostF()
 
 

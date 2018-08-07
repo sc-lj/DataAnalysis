@@ -145,7 +145,7 @@ class CNN():
             self.auc_value, self.update_op = tf.metrics.auc(self.target, predict)
 
 
-def train_model(cnn):
+def train_model(cnn,isClassify):
     with tf.Session() as sess:
         global_step = tf.Variable(0, name='global_step', trainable=False)
         optimizer = tf.train.AdamOptimizer(learning_rate=arg.lr).minimize(cnn.rmse_cost, global_step=global_step)
@@ -199,11 +199,11 @@ def train_model(cnn):
             sess.run(init)
 
 
-        for matrix, label in gen_train(train_file, batch=50000,log=log):
+        for matrix, label in gen_train(train_file, batch=30000,log=log,isClassify=isClassify):
             train_step(matrix, label)
             current_step = tf.train.global_step(sess, global_step)
             if current_step % arg.evaluate_every== 0:
-                dev_data = gen_batch(valid_file, batch=50000)
+                dev_data = gen_batch(valid_file, batch=30000,isClassify=isClassify)
                 mat, lab = dev_data.__next__()
                 dev_step(mat, lab)
                 path = saver.save(sess, save_path=checkpoint_prefix, global_step=current_step)
@@ -250,10 +250,11 @@ if __name__ == '__main__':
     filt=arg.filter
     varNum=107#自变量总个数
     # 总共需要106个变量，去掉了userid和register_time两个变量
+    isClassify = False
     height=int(math.ceil(float(varNum)/filt))
-    cnn=CNN(height,isClassify=True)
+    cnn=CNN(height,isClassify=isClassify)
     try:
-        train_model(cnn)
+        train_model(cnn,isClassify)
         send_msg('tap4fun cnn模型已经训练完毕')
     except Exception as e:
         send_msg('tap4fun cnn模型出现错误，%s'%e)
