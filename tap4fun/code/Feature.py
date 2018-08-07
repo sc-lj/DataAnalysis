@@ -1,4 +1,8 @@
 # coding:utf-8
+
+"""
+该代码是给深度学习提供训练数据的。
+"""
 import os,sys
 try:
     from code.Script import *

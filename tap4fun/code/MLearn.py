@@ -1,5 +1,9 @@
 # coding:utf-8
 
+"""
+该代码是给机器学习提供特征的。
+"""
+
 try:
     from code.Script import *
 except:
@@ -13,11 +17,14 @@ from sklearn.feature_selection import SelectKBest
 from scipy.stats import pearsonr
 from sklearn.utils import shuffle
 import xgboost as xgb
+from xgboost import XGBRegressor,XGBClassifier
+from sklearn import metrics
+from sklearn.grid_search import GridSearchCV
 import os
 
 
 scaler=StandardScaler()
-MinMax=MinMaxScaler(feature_range=(0,10))
+MinMax=MinMaxScaler(feature_range=(0,250))
 normal=Normalizer()
 def analysis_resource_var(files):
     data=pd.read_csv(files,index_col=0)
@@ -39,7 +46,7 @@ def analysis_resource_var(files):
     # std_data.to_csv('../data/describe.csv')
 
 
-def analysis_level_var(files):
+def analysis_level_var(files,isstd=True):
     data=pd.read_csv(files,index_col=0,parse_dates=['register_time'])
     # ～是取相反的意思，判断是否都是数字，占用内存很大，不划算
     # new=data[~data.applymap(np.isreal).all(1)]
@@ -62,20 +69,34 @@ def analysis_level_var(files):
         new_data[var_reduce]=data[var_reduce]
 
     # 对值变动范围很大的物品进行标准化
-    std_data = scaler.fit_transform(new_data)
-    #将值压缩到一定范围
-    # std_data=MinMax.fit_transform(new_data)
+    if isstd:
+        std_data = scaler.fit_transform(new_data)
+    else:
+        #将值压缩到一定范围
+        std_data=MinMax.fit_transform(new_data)
     std_data = pd.DataFrame(std_data, index=new_data.index, columns=new_data.columns)
 
     X=data[X_var]
     X=pd.concat([X,std_data],axis=1)
-    decimals_var = X.columns.tolist()[1:]
+    columns = X.columns.tolist()
+    levelvar = [column for column in columns if re.match('.+_level', column)]
+
+    # 根据变量的方差降维
+    invar = columns[1:]
+    othervar=columns[:1]
+    invarvalue=X[invar]
+    describe=invarvalue.std()
+    # 删除了自变量的方差小于0.1的变量。考虑到里面的level都是有序变量，所以方差设置的比较小
+    # 当方差阈值设置为0.5的时候，删除了45个变量，这些特征不发散。
+    var=describe[describe.apply(lambda x:True if x>0.5 else False)].index
+
+    varvalue=X[var]
+    othervalue=X[othervar]
 
     Y=data[depvar]
-    data=pd.concat([X,Y],axis=1)
-
+    data=pd.concat([othervalue,varvalue,Y],axis=1)
+    # decimals_var = X.columns.tolist()[1:]
     # decimals=pd.Series([5]*len(decimals_var),index=decimals_var)
-    # data=data.round(decimals)
     print(data.shape)
     data.to_csv(tapfun,float_format="%.5f")
 
@@ -185,67 +206,14 @@ def addColumn(files):
     data['nonzeronum']=newvalue
     data.to_csv(files,float_format="%.5f")
 
-
-def xgboostF():
-    traindata, traintarget=getFeature(train_file)
-    validdata,validtarget=getFeature(valid_file)
-    # 加载array格式的数据到xgb中。
-    dtrain = xgb.DMatrix(traindata, label=traintarget)
-    dvalid=xgb.DMatrix(validdata,label=validtarget)
-
-    # 参数
-    param={
-        "objective":"reg:logistic",   # 回归问题
-        "eval_metric":"rmse",         # 采用的损失函数
-        "booster":"gbtree",           # 采用梯度提升树模型
-        "silent":1,                   # 不打印信息
-        "nthread":3,                  # 训练用的线程数
-        'lambda': 2,  # 控制模型复杂度的权重值的L2正则化项参数，参数越大，模型越不容易过拟合。
-        'eta': 0.007,  # 如同学习率
-        "min_child_weight":2,
-        "subsample":0.6,
-        "colsample_bytree":0.5,
-        "scale_pos_weight":0.3
-    }
-
-    evals=[(dtrain,"train"),(dvalid,"val")]
-    bst = xgb.train(params=param,dtrain=dtrain,num_boost_round=200,evals=evals)
-    if not os.path.exists('model/'):
-        os.makedirs('model/')
-    bst.save_model('model/test.model')
-
-def predict():
-    param={
-        "objective":"reg:logistic",   # 回归问题
-        "eval_metric":"rmse",         # 采用的损失函数
-        "booster":"gbtree",           # 采用梯度提升树模型
-        "silent":1,                   # 不打印信息
-        "nthread":3,                  # 训练用的线程数
-        'lambda': 2,  # 控制模型复杂度的权重值的L2正则化项参数，参数越大，模型越不容易过拟合。
-        'eta': 0.007,  # 如同学习率
-        "min_child_weight":2,
-        "subsample":0.6,
-        "colsample_bytree":0.5,
-        "scale_pos_weight":0.3
-    }
-    bst=xgb.Booster(params=param)# 初始化模型
-    bst.load_model('model/test.model')
-
-
-def getFeature(files):
+def getFeature(files,istrain=True):
     data=pd.read_csv(files,index_col=0)
     columns=data.columns.tolist()
     invar=columns[1:-2]
     devar=columns[-1]
     levelvar=[column for column in  columns if re.match('.+_level',column)]
 
-    invarvalue=data[invar]
-    describe=invarvalue.std()
-    # 删除了自变量的方差小于0.1的变量。考虑到里面的level都是有序变量，所以方差设置的比较小
-    # 当方差阈值设置为0.5的时候，删除了45个变量，这些特征不发散。
-    var=describe[describe.apply(lambda x:True if x>0.5 else False)].index
-
-    varvalue=np.array(data[var].values)
+    varvalue=np.array(data[invar].values)
     target=np.array(data[devar].values)
     return varvalue,target
 
@@ -262,11 +230,12 @@ if __name__ == '__main__':
     # 增加列
     # addColumn(drop_zero)
     # 标准化
-    # analysis_level_var(drop_zero)
+    analysis_level_var(drop_zero)
     # 切分数据集
-    # cut_data(tapfun)
+    cut_data(tapfun)
 
+    # getFeature(tapfun)
     # getFeature(valid_file)
-    xgboostF()
+    # getFeature(train_file)
 
 
