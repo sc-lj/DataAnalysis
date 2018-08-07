@@ -133,7 +133,7 @@ def argument():
     args.add_argument('--lr',default=0.1,type=float,help='学习率')
     args.add_argument('--out_dir',default='./',type=str,help='结果输出文件夹')
     args.add_argument('--max_checkpoints',default=3,type=int,help='模型结果最大保存的数量')
-    args.add_argument('--evaluate_every',default=100,type=int,help='每训练多少轮，就进行验证')
+    args.add_argument('--evaluate_every',default=50,type=int,help='每训练多少轮，就进行验证')
 
     arg=args.parse_args()
     return arg
