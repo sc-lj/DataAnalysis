@@ -116,7 +116,7 @@ class CNN():
         if norm:  # 判断书否是 BN 层
             Wx_plus_b=self.normal(Wx_plus_b)
 
-        activate=tf.nn.relu(Wx_plus_b)
+        activate=tf.nn.sigmoid(Wx_plus_b)
         filter=activate.get_shape()[1]
         pool2 = tf.nn.max_pool(activate, ksize=[1,filter, self.arg.filter, 1], strides=[1, 1, 2, 1], padding='VALID',name='pool-1')
 
@@ -126,7 +126,7 @@ class CNN():
         # 第一个全连接层
         til_vector=tf.reshape(pool2,shape=[-1,product])
         fcon1=tf.add(tf.matmul(til_vector,self.weight([product,20])),self.biase([20]))
-        fcon1=tf.nn.relu(fcon1)
+        fcon1=tf.nn.sigmoid(fcon1)
         #  dropout 则应当置于 activation layer 之后。
         result1=tf.nn.dropout(fcon1,self.keep_out)
 
@@ -225,7 +225,7 @@ def predict_model(cnn,isClassify):
         # saver = tf.train.import_meta_graph(checkpoints_dir+"/model-2300.meta")
         # saver.restore(sess, tf.train.latest_checkpoint(checkpoints_dir))
 
-        dev_data = gen_batch(tap_fun_test, batch=10,predict=True,isClassify=isClassify)
+        dev_data = gen_batch('../data/TapFunTest.csv', batch=30000,predict=True,isClassify=isClassify)
         Y=[]
         while True:
             try:
@@ -237,7 +237,6 @@ def predict_model(cnn,isClassify):
             # result=tf.where(tf.less_equal(result,0.5),np.zeros(shape),np.ones(shape))
             y=sess.run([cnn.result],feed_dict={cnn.input:mat,cnn.keep_out:1})
             y=y[0].flatten().tolist()
-            print(y)
             Y.extend(y)
         print(len(Y))
         data=pd.read_csv(valid_file,index_col=0)
@@ -255,12 +254,13 @@ if __name__ == '__main__':
     cnn=CNN(height,isClassify=isClassify)
     try:
         train_model(cnn)
+        predict_model(cnn, isClassify)
         send_msg('tap4fun cnn模型已经训练完毕')
     except Exception as e:
         send_msg('tap4fun cnn模型出现错误，%s'%e)
 
 
-    # predict_model(cnn)
+    # predict_model(cnn,isClassify)
 
 
 
