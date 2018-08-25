@@ -112,6 +112,9 @@ drop_zero='../data/drop_zero.csv'
 # 剔除了一些自变量，又增加一些自变量
 tapfun='../data/tapfun.csv'
 
+# 用于分类数据集，将变量值中只要大于0的改为1
+classifyfile="../data/classify.csv"
+
 
 # 这些都是有相同后缀的变量,_add_value,_reduce_value
 category=['wood','stone','ivory','meat','magic','infantry','cavalry','shaman','wound_infantry','wound_cavalry','wound_shaman',
