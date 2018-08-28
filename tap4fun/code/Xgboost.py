@@ -8,8 +8,9 @@ except:
 
 import xgboost as xgb
 from xgboost import XGBRegressor,XGBClassifier
-from sklearn import metrics
+from sklearn.metrics import *
 from sklearn.model_selection import GridSearchCV
+from sklearn.externals import joblib
 
 
 """训练Xgboost 回归模型"""
@@ -62,8 +63,8 @@ def xgboostF():
 
 # https://segmentfault.com/a/1190000014040317
 # noinspection PyDeprecation
-def xgboostLinear():
-    X_train, Y_train=getFeature(train_file)
+def xgboostparams():
+    X_train, Y_train=read_data(train_file)
     # validdata,validtarget=getFeature(valid_file)
     cv_params = {'n_estimators': [400, 500, 600, 700, 800]}
     other_params = {'learning_rate': 0.1,# 学习率
@@ -86,8 +87,45 @@ def xgboostLinear():
     print('最佳模型得分:{0}'.format(optimized_GBM.best_score_))
 
 
+def read_data(files):
+    train=pd.read_csv(files,index_col=0)
+    columns=train.columns.tolist()
+    dta=train[columns[:-1]][:100]
+    label=train[columns[-1]][:100]
+    return dta,label
 
+
+def xgboostLinear():
+    X_train, Y_train=read_data(train_file)
+    X_test,Y_test=read_data(valid_file)
+    # XGBoost训练过程，下面的参数就是刚才调试出来的最佳参数组合
+    model = xgb.XGBRegressor(learning_rate=0.1, n_estimators=550, max_depth=4, min_child_weight=5, seed=0,
+                             subsample=0.7, colsample_bytree=0.7, gamma=0.1, reg_alpha=1, reg_lambda=1)
+    model.fit(X_train, Y_train)
+    if not os.path.exists("./model/xgboost"):
+        os.makedirs("./model/xgboost")
+
+    joblib.dump(model,"./model/xgboost/xgboost.m")
+    # 对测试集进行预测
+    ans = model.predict(X_test)
+
+    print('R-squared value of Poly SVR is', model.score(X_test, Y_test))
+    print('The mean squared error of Poly SVR is', mean_squared_error(Y_test, ans))
+
+    # ans_len = len(ans)
+    # id_list = np.arange(10441, 17441)
+    # data_arr = []
+    # for row in range(0, ans_len):
+    #     data_arr.append([int(id_list[row]), ans[row]])
+    # np_data = np.array(data_arr)
+    #
+    # # 写入文件
+    # pd_data = pd.DataFrame(np_data, columns=['id', 'y'])
+    # # print(pd_data)
+    # pd_data.to_csv('submit.csv', index=None)
 
 
 if __name__ == '__main__':
     xgboostLinear()
+
+
