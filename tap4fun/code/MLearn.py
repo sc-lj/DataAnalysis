@@ -230,7 +230,7 @@ def cut_data(filename):
 def getFeature(files,istrain=True):
     data=pd.read_csv(files,index_col=0)
     columns=data.columns.tolist()
-    invar=columns[1:-2]
+    invar=columns[:-1]
     devar=columns[-1]
     levelvar=[column for column in  columns if re.match('.+_level',column)]
 
@@ -309,15 +309,15 @@ if __name__ == '__main__':
 
     """按照下面顺序执行"""
     # 删除行
-    check_Row(tap_fun_train)
+    # check_Row(tap_fun_train)
     # 删除列
-    checkColumn(drop_zero)
+    # checkColumn(drop_zero)
     # 增加列
-    addColumn(drop_zero)
+    # addColumn(drop_zero)
     # 标准化
-    analysis_level_var(drop_zero)
+    # analysis_level_var(drop_zero)
     # 切分数据集
-    cut_data(tapfun)
+    # cut_data(tapfun)
 
     # getFeature(tapfun)
     # classify(drop_zero)
