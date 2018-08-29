@@ -59,8 +59,8 @@ def check_Row(files):
                 index.append(indexs[i])
             else:nonzero_num+=1
         i+=1
-    print("自变量至少有%s个不为零的时候，因变量为0的个数"%str(num-1),zero_num)
-    print("自变量至少有%s个不为零的时候，因变量不为0的个数"%str(num-1), nonzero_num)
+    # print("自变量至少有%s个不为零的时候，因变量为0的个数"%str(num-1),zero_num)
+    # print("自变量至少有%s个不为零的时候，因变量不为0的个数"%str(num-1), nonzero_num)
     num+=1
     data.drop(index,inplace=True)
     # print(data.shape)
@@ -309,15 +309,15 @@ if __name__ == '__main__':
 
     """按照下面顺序执行"""
     # 删除行
-    # check_Row(tap_fun_train)
+    check_Row(tap_fun_train)
     # 删除列
-    # checkColumn(drop_zero)
+    checkColumn(drop_zero)
     # 增加列
-    # addColumn(drop_zero)
+    addColumn(drop_zero)
     # 标准化
-    # analysis_level_var(drop_zero)
+    analysis_level_var(drop_zero)
     # 切分数据集
-    # cut_data(tapfun)
+    cut_data(tapfun)
 
     # getFeature(tapfun)
     # classify(drop_zero)

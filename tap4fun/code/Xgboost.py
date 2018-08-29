@@ -90,8 +90,8 @@ def xgboostparams():
 def read_data(files):
     train=pd.read_csv(files,index_col=0)
     columns=train.columns.tolist()
-    dta=train[columns[:-1]][:100]
-    label=train[columns[-1]][:100]
+    dta=train[columns[:-1]]
+    label=train[columns[-1]]
     return dta,label
 
 
