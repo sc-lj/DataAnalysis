@@ -81,10 +81,10 @@ def xgboostparams():
     # 调参数
     optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='r2', cv=5, verbose=1, n_jobs=4)
     optimized_GBM.fit(X_train, Y_train)
-    evalute_result = optimized_GBM.grid_scores_
-    print('每轮迭代运行结果:{0}'.format(evalute_result))
-    print('参数的最佳取值：{0}'.format(optimized_GBM.best_params_))
-    print('最佳模型得分:{0}'.format(optimized_GBM.best_score_))
+    # evalute_result = optimized_GBM.grid_scores_
+    # print('每轮迭代运行结果:{0}'.format(evalute_result))
+    print('the best params is :{0}'.format(optimized_GBM.best_params_))
+    print('the model best score is :{0}'.format(optimized_GBM.best_score_))
 
 
 def read_data(files):
@@ -126,6 +126,6 @@ def xgboostLinear():
 
 
 if __name__ == '__main__':
-    xgboostLinear()
+    xgboostparams()
 
 
