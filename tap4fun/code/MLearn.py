@@ -57,9 +57,6 @@ def check_Row(files):
                 index.append(indexs[i])
             else:nonzero_num+=1
         i+=1
-    # print("自变量至少有%s个不为零的时候，因变量为0的个数"%str(num-1),zero_num)
-    # print("自变量至少有%s个不为零的时候，因变量不为0的个数"%str(num-1), nonzero_num)
-    num+=1
     data.drop(index,inplace=True)
     data.to_csv(drop_zero)
     return data
@@ -77,7 +74,6 @@ def checkColumn(files):
     """
     data = pd.read_csv(files, index_col=0)
     vars = data.columns[:-1]
-    labelnum = 45988.
     willdrop = []
 
     for var in vars:
@@ -389,25 +385,38 @@ def hebin(files1,files2):
     df.to_csv('./predict.csv',float_format="%.1f")
 
 
+def pcaDecomposition(files):
+    data=pd.read_csv(files,index_col=0)
+    composition=data.shape[1]
+    columns = data.columns.tolist()
+    nonlevelvar = [column for column in columns if not re.match('.+_level', column)]
+    newdata=data[nonlevelvar]
+    pca=PCA(n_components=composition)
+    pca.fit(newdata)
+    print(pca.explained_variance_)
+
+
+
+
 if __name__ == '__main__':
     # analysis_resource_var(drop_zero)
     # checkColumn('../data/drop_zero.csv')
 
     """按照下面顺序执行"""
     # 删除行
-    # check_Row(tap_fun_train)
+    check_Row(tap_fun_train)
     # 删除列
     # checkColumn(drop_zero)
     # 增加列
     # addColumn(drop_zero)
     # 标准化
-    analysis_level_var(drop_zero)
+    # analysis_level_var(drop_zero)
     # 切分数据集
-    cut_data(tapfun)
+    # cut_data(tapfun)
 
     # classify(drop_zero)
 
-    DealTestData(tap_fun_test)
+    # DealTestData(tap_fun_test)
     # hebin("../data/sub_sample.csv","../data/predict.csv")
 
 
