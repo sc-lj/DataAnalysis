@@ -392,6 +392,7 @@ def pcaDecomposition(files):
     newdata=data[nonlevelvar]
     pca=PCA(n_components=27)
     pca.fit(newdata)
+    print(pca.explained_variance_ratio_)
     print(pca.explained_variance_)
 
 
