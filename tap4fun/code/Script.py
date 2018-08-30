@@ -129,7 +129,7 @@ def argument():
     args=argparse.ArgumentParser()
     args.add_argument('--filter',default=4,type=int,help='卷积核的大小,也是pooling的大小')
     args.add_argument('--filter_num',default=20,type=int,help='卷积核的个数')
-    args.add_argument('--epochs',default=100,type=int,help='循环次数')
+    args.add_argument('--epochs',default=50,type=int,help='循环次数')
     args.add_argument('--batch_size',default=100,type=int,help='每次训练块大小')
     args.add_argument('--stride',default=1,type=int,help='卷积核移动的步长')
     args.add_argument('--dropout',default=0.5,type=float,help='dropout 概率')

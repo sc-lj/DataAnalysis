@@ -109,24 +109,21 @@ def xgboostLinear():
     joblib.dump(model,"./model/xgboost/xgboost.m")
     # 对测试集进行预测
     ans = model.predict(X_test)
-
     print('R-squared value of Poly SVR is', model.score(X_test, Y_test))
-    print('The mean squared error of Poly SVR is', mean_squared_error(Y_test, ans))
+    print('The root mean squared error of Poly SVR is', np.sqrt(mean_squared_error(Y_test, ans)))
 
-    # ans_len = len(ans)
-    # id_list = np.arange(10441, 17441)
-    # data_arr = []
-    # for row in range(0, ans_len):
-    #     data_arr.append([int(id_list[row]), ans[row]])
-    # np_data = np.array(data_arr)
-    #
-    # # 写入文件
-    # pd_data = pd.DataFrame(np_data, columns=['id', 'y'])
-    # # print(pd_data)
-    # pd_data.to_csv('submit.csv', index=None)
+def xgboostPredict(testfile):
+    data=pd.read_csv(testfile,index_col=0)
+    columns = data.columns.tolist()
+    model=joblib.load("./model/xgboost/xgboost.m")
+    anc=model.predict(data[columns])
+    df=pd.DataFrame(anc,columns=["prediction_pay_price"],index=data.index)
+    df.to_csv("../data/predict.csv")
+
+
 
 
 if __name__ == '__main__':
     # xgboostparams()
-    xgboostLinear()
-
+    # xgboostLinear()
+    xgboostPredict("../data/TapFunTest.csv")

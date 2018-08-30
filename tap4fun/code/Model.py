@@ -19,10 +19,9 @@ arg=argument()
 log=log_config(__file__)
 
 class CNN():
-    def __init__(self,height,isClassify):
+    def __init__(self,height):
         self.arg=arg
         self.height=height#
-        self.isClassify=isClassify
         self.input=tf.placeholder(dtype=tf.float32,shape=[None,height,varNum],name='input')
         self.target=tf.placeholder(dtype=tf.float32,shape=[None,1],name='label')
         self.keep_out=tf.placeholder(tf.float32)
@@ -134,16 +133,8 @@ class CNN():
         fcon2 = tf.add(tf.matmul(result1, self.weight([20, 5])), self.biase([5]))
         fcon2=tf.nn.sigmoid(fcon2)
 
-        if not self.isClassify:
-            self.result = tf.nn.relu(tf.add(tf.matmul(fcon2, self.weight([5, 1])), self.biase([1])))
-            self.rmse_cost = tf.sqrt(tf.losses.mean_squared_error(self.result, self.target))
-        else:
-            self.result=tf.add(tf.matmul(fcon2, self.weight([5, 1])), self.biase([1]))
-            rmse_cost=tf.nn.sigmoid_cross_entropy_with_logits(labels=self.target,logits=self.result)
-            self.rmse_cost=tf.reduce_mean(rmse_cost)
-            predict=tf.sigmoid(self.result)
-            self.auc_value, self.update_op = tf.metrics.auc(self.target, predict)
-
+        self.result = tf.nn.relu(tf.add(tf.matmul(fcon2, self.weight([5, 1])), self.biase([1])))
+        self.rmse_cost = tf.sqrt(tf.losses.mean_squared_error(self.result, self.target))
 
 def train_model(cnn):
     with tf.Session() as sess:
@@ -172,22 +163,14 @@ def train_model(cnn):
 
         def train_step(X, Y):
             feed_dict = {cnn.input: X, cnn.target: Y,cnn.keep_out:arg.dropout}
-            if cnn.isClassify:
-                _, step, summary, loss, auc_value = sess.run([optimizer, global_step, loss_summary, cnn.rmse_cost, cnn.auc_value], feed_dict=feed_dict)
-                log.info('train step {},loss {:g},auc_score {:f}'.format( step, loss,auc_value))
-            else:
-                _, step, summary, loss= sess.run([optimizer, global_step, loss_summary, cnn.rmse_cost], feed_dict=feed_dict)
-                log.info('train step {},loss {:g}'.format( step, loss))
+            _, step, summary, loss= sess.run([optimizer, global_step, loss_summary, cnn.rmse_cost], feed_dict=feed_dict)
+            log.info('train step {},loss {:g}'.format( step, loss))
             train_writer.add_summary(summary, step)
 
         def dev_step(X, Y):
             feed_dict = {cnn.input: X, cnn.target: Y,cnn.keep_out:1}
-            if cnn.isClassify:
-                step, summary, loss ,auc_value= sess.run([global_step, loss_summary, cnn.rmse_cost,cnn.auc_value], feed_dict=feed_dict)
-                log.info('train step {},loss {:g},auc_score {:g}'.format( step, loss,auc_value))
-            else:
-                step, summary, loss = sess.run([global_step, loss_summary, cnn.rmse_cost], feed_dict=feed_dict)
-                log.info('train step {},loss {:g}'.format( step, loss))
+            step, summary, loss = sess.run([global_step, loss_summary, cnn.rmse_cost], feed_dict=feed_dict)
+            log.info('train step {},loss {:g}'.format( step, loss))
             dev_writer.add_summary(summary, step)
 
         meta=tf.train.get_checkpoint_state(checkpoints_dir)
@@ -199,17 +182,17 @@ def train_model(cnn):
             sess.run(init)
 
 
-        for matrix, label in gen_train(train_file, batch=30000,log=log,isClassify=cnn.isClassify):
+        for matrix, label in gen_train(train_file, batch=30000,log=log):
             train_step(matrix, label)
             current_step = tf.train.global_step(sess, global_step)
             if current_step % arg.evaluate_every== 0:
-                dev_data = gen_batch(valid_file, batch=30000,isClassify=cnn.isClassify)
+                dev_data = gen_batch(valid_file, batch=30000)
                 mat, lab = dev_data.__next__()
                 dev_step(mat, lab)
                 path = saver.save(sess, save_path=checkpoint_prefix, global_step=current_step)
                 log.info("Saved model checkpoint to {}\n".format(path))
 
-def predict_model(cnn,isClassify):
+def predict_model(cnn):
     out_dir = arg.out_dir
     checkpoints_dir = os.path.abspath(os.path.join(out_dir, 'model'))
     with tf.Session() as sess:
@@ -225,7 +208,7 @@ def predict_model(cnn,isClassify):
         # saver = tf.train.import_meta_graph(checkpoints_dir+"/model-2300.meta")
         # saver.restore(sess, tf.train.latest_checkpoint(checkpoints_dir))
 
-        dev_data = gen_batch('../data/TapFunTest.csv', batch=30000,predict=True,isClassify=isClassify)
+        dev_data = gen_batch('../data/TapFunTest.csv', batch=30000,predict=True)
         Y=[]
         while True:
             try:
@@ -247,20 +230,19 @@ def predict_model(cnn,isClassify):
 
 if __name__ == '__main__':
     filt=arg.filter
-    varNum=107#自变量总个数
+    varNum=65#自变量总个数
     # 总共需要106个变量，去掉了userid和register_time两个变量
-    isClassify = False
     height=int(math.ceil(float(varNum)/filt))
-    cnn=CNN(height,isClassify=isClassify)
+    cnn=CNN(height)
     try:
         train_model(cnn)
-        predict_model(cnn, isClassify)
+        # predict_model(cnn)
         send_msg('tap4fun cnn模型已经训练完毕')
     except Exception as e:
         send_msg('tap4fun cnn模型出现错误，%s'%e)
 
 
-    # predict_model(cnn,isClassify)
+    # predict_model(cnn)
 
 
 

@@ -17,7 +17,7 @@ from sklearn.feature_selection import SelectKBest
 from scipy.stats import pearsonr
 from sklearn.utils import shuffle
 from sklearn import metrics
-import os
+import os,csv
 
 
 scaler=StandardScaler()
@@ -61,7 +61,6 @@ def check_Row(files):
     # print("自变量至少有%s个不为零的时候，因变量不为0的个数"%str(num-1), nonzero_num)
     num+=1
     data.drop(index,inplace=True)
-    # print(data.shape)
     data.to_csv(drop_zero)
     return data
 
@@ -84,37 +83,35 @@ def checkColumn(files):
     for var in vars:
         da_add = data[var]
         median_add = da_add.quantile(0.3)
-        label_add = data[da_add > median_add]['prediction_pay_price'].apply(lambda x: 1 if x > 0 else 0).sum()
         pro, P = pearsonr(data[da_add > median_add][var], data[da_add > median_add]['prediction_pay_price'])
         if P > 0.05:
             willdrop.append(var)
-        # print(var,',',median_add,',', label_add / labelnum)
 
     data.drop(willdrop,inplace=True,axis=1)
     dropedvars = data.columns[:-1]
 
     levelvar = [column for column in dropedvars if re.match('.+_level', column)]
 
-    willevelvar=[]
-    # 对level类型变量进行剔除
-    # level类型变量值大于0的样本数与在这些样本中标签值大于0的样本数的比例。计算level类型变量值大于0对标签大于0的贡献率
-    for var in levelvar:
-        loc = data[var].apply(lambda x: True if x > 0 else False)
-        sum = data.loc[loc, "prediction_pay_price"].apply(lambda x: 1 if x > 0 else 0).sum()
-        pros=float(sum)/loc.sum()
-        # pros越接近1，越表明当该变量大于0的样本其label越可能会大于0；如果为1，说明该变量有大于0的样本，其label全部大于0。
-        if pros==1:
-            willevelvar.append(var)
-        # print(var,',',median_add,',', label_add / labelnum)
-
-    """
-    这些变量大于0的样本，其label一定大于0
-    ['sr_troop_defense_level', 'sr_infantry_def_level', 'sr_cavalry_def_level', 'sr_shaman_def_level', 'sr_infantry_hp_level', 
-    'sr_cavalry_hp_level', 'sr_shaman_hp_level', 'sr_alliance_march_speed_level', 'sr_pvp_march_speed_level', 'sr_gathering_march_speed_level']
-    """
-
-    print(willevelvar)
-    data.drop(willevelvar,inplace=True,axis=1)
+    # willevelvar=[]
+    # # 对level类型变量进行剔除
+    # # level类型变量值大于0的样本数与在这些样本中标签值大于0的样本数的比例。计算level类型变量值大于0对标签大于0的贡献率
+    # for var in levelvar:
+    #     loc = data[var].apply(lambda x: True if x > 0 else False)
+    #     sum = data.loc[loc, "prediction_pay_price"].apply(lambda x: 1 if x > 0 else 0).sum()
+    #     pros=float(sum)/loc.sum()
+    #     # pros越接近1，越表明当该变量大于0的样本其label越可能会大于0；如果为1，说明该变量有大于0的样本，其label全部大于0。
+    #     if pros==1:
+    #         willevelvar.append(var)
+    #     # print(var,',',median_add,',', label_add / labelnum)
+    #
+    # """
+    # 这些变量大于0的样本，其label一定大于0
+    # ['sr_troop_defense_level', 'sr_infantry_def_level', 'sr_cavalry_def_level', 'sr_shaman_def_level', 'sr_infantry_hp_level',
+    # 'sr_cavalry_hp_level', 'sr_shaman_hp_level', 'sr_alliance_march_speed_level', 'sr_pvp_march_speed_level', 'sr_gathering_march_speed_level']
+    # """
+    #
+    # print(willevelvar)
+    # data.drop(willevelvar,inplace=True,axis=1)
     data.to_csv(files)
 
 
@@ -132,7 +129,7 @@ def addColumn(files):
 
     newvalue=[]
     for da in data.values:
-        da=list(da)[1:-1]
+        da=list(da)[:-1]
         del da[-3]
         newda=[i for i in da if i>0]
         num=len(newda)
@@ -212,9 +209,8 @@ def analysis_level_var(files):
 
     Y=data[depvar]
     data=pd.concat([levelvalue,varvalue,Y],axis=1)
-    # decimals_var = X.columns.tolist()[1:]
-    # decimals=pd.Series([5]*len(decimals_var),index=decimals_var)
-    data.to_csv(tapfun,float_format="%.5f")
+    print(data.shape)
+    # data.to_csv(tapfun,float_format="%.5f")
 
 
 def cut_data(filename):
@@ -252,7 +248,6 @@ def getFeature(files,istrain=True):
     columns=data.columns.tolist()
     invar=columns[:-1]
     devar=columns[-1]
-    levelvar=[column for column in  columns if re.match('.+_level',column)]
 
     varvalue=np.array(data[invar].values)
     target=np.array(data[devar].values)
@@ -268,6 +263,7 @@ def DealTestData(files):
     data=pd.read_csv(files,index_col=0)
     data.rename(columns={'treatment_acceleraion_add_value':'treatment_acceleration_add_value'},inplace=True)
     data.drop("register_time",inplace=True,axis=1)
+    print(data.shape)
     index=[]
     indexs=data.index
     i=0
@@ -276,7 +272,7 @@ def DealTestData(files):
     zero_num = 0
     nonzero_num = 0
     for da in data.values:
-        da=list(da)[1:-1]
+        da=list(da)
         del da[-3]
         newda=list(set(da))
         label=da[-1]
@@ -290,8 +286,11 @@ def DealTestData(files):
     # print("自变量至少有%s个不为零的时候，因变量不为0的个数"%str(num-1), nonzero_num)
     num+=1
     data.drop(index,inplace=True)
-    print(data.shape)
-
+    df=[]
+    for i in range(len(index)):
+        df.append([index[i],0])
+    df=pd.DataFrame(df,columns=["user_id",'prediction_pay_price'])
+    df.to_csv("../data/sub_sample.csv",index=False)
 
     """
     检查每个变量与因变量的相关性，利用pearson系数，如果其P值大于0.05，那么其相关性较弱。删除了16个变量
@@ -324,7 +323,7 @@ def DealTestData(files):
 
     newvalue=[]
     for da in data.values:
-        da=list(da)[1:-1]
+        da=list(da)
         del da[-3]
         newda=[i for i in da if i>0]
         num=len(newda)
@@ -332,8 +331,6 @@ def DealTestData(files):
 
     data=data.reindex(columns=columns)
     data['nonzeronum']=newvalue
-    print(data.shape)
-
 
     """
     
@@ -341,7 +338,7 @@ def DealTestData(files):
 
     variable=data.columns.tolist()
     new_data=pd.DataFrame()
-    X_var=variable[:-1]
+    X_var=variable
 
     # 归一化
     for cate in category:
@@ -377,9 +374,19 @@ def DealTestData(files):
 
     varvalue=X[var]
     data=pd.concat([levelvalue,varvalue],axis=1)
+    print(data.shape)
     # decimals_var = X.columns.tolist()[1:]
     # decimals=pd.Series([5]*len(decimals_var),index=decimals_var)
-    data.to_csv(tapfun,float_format="%.5f")
+    data.to_csv('../data/TapFunTest.csv',float_format="%.5f")
+
+
+def hebin(files1,files2):
+    data=pd.read_csv(files1,index_col=0)
+    data1=pd.read_csv(files2,index_col=0)
+    df=pd.concat((data,data1),axis=0)
+    df=df.sort_index()
+    print(df.shape)
+    df.to_csv('./predict.csv',float_format="%.1f")
 
 
 if __name__ == '__main__':
@@ -398,9 +405,10 @@ if __name__ == '__main__':
     # 切分数据集
     cut_data(tapfun)
 
-    # getFeature(tapfun)
     # classify(drop_zero)
 
-    DealTestData(tap_fun_test)
+    # DealTestData(tap_fun_test)
+    # hebin("../data/sub_sample.csv","../data/predict.csv")
+
 
 
