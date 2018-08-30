@@ -210,7 +210,7 @@ def analysis_level_var(files):
     Y=data[depvar]
     data=pd.concat([levelvalue,varvalue,Y],axis=1)
     print(data.shape)
-    # data.to_csv(tapfun,float_format="%.5f")
+    data.to_csv(tapfun,float_format="%.5f")
 
 
 def cut_data(filename):
@@ -308,10 +308,10 @@ def DealTestData(files):
 
     data.drop(willdrop,inplace=True,axis=1)
 
-    willevelvar=['sr_troop_defense_level', 'sr_infantry_def_level', 'sr_cavalry_def_level', 'sr_shaman_def_level', 'sr_infantry_hp_level',
-    'sr_cavalry_hp_level', 'sr_shaman_hp_level', 'sr_alliance_march_speed_level', 'sr_pvp_march_speed_level', 'sr_gathering_march_speed_level']
-
-    data.drop(willevelvar,inplace=True,axis=1)
+    # willevelvar=['sr_troop_defense_level', 'sr_infantry_def_level', 'sr_cavalry_def_level', 'sr_shaman_def_level', 'sr_infantry_hp_level',
+    # 'sr_cavalry_hp_level', 'sr_shaman_hp_level', 'sr_alliance_march_speed_level', 'sr_pvp_march_speed_level', 'sr_gathering_march_speed_level']
+    #
+    # data.drop(willevelvar,inplace=True,axis=1)
 
     """
     增加列
@@ -395,11 +395,11 @@ if __name__ == '__main__':
 
     """按照下面顺序执行"""
     # 删除行
-    check_Row(tap_fun_train)
+    # check_Row(tap_fun_train)
     # 删除列
-    checkColumn(drop_zero)
+    # checkColumn(drop_zero)
     # 增加列
-    addColumn(drop_zero)
+    # addColumn(drop_zero)
     # 标准化
     analysis_level_var(drop_zero)
     # 切分数据集
@@ -407,7 +407,7 @@ if __name__ == '__main__':
 
     # classify(drop_zero)
 
-    # DealTestData(tap_fun_test)
+    DealTestData(tap_fun_test)
     # hebin("../data/sub_sample.csv","../data/predict.csv")
 
 
