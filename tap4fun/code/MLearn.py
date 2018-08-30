@@ -399,12 +399,11 @@ def pcaDecomposition(files):
 
 
 if __name__ == '__main__':
-    # analysis_resource_var(drop_zero)
-    # checkColumn('../data/drop_zero.csv')
+    pcaDecomposition(tapfun)
 
     """按照下面顺序执行"""
     # 删除行
-    check_Row(tap_fun_train)
+    # check_Row(tap_fun_train)
     # 删除列
     # checkColumn(drop_zero)
     # 增加列
