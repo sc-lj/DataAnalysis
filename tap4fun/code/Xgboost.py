@@ -67,11 +67,12 @@ def xgboostparams():
     X_train, Y_train=read_data(train_file)
     # validdata,validtarget=getFeature(valid_file)
     # cv_params = {'n_estimators': [200, 250, 300, 350, 400]}
-    cv_params={'max_depth': [3, 4, 5, 6, 7, 8, 9, 10], 'min_child_weight': [1, 2, 3, 4, 5, 6]}
+    # cv_params={'max_depth': [3, 4, 5, 6, 7, 8, 9, 10], 'min_child_weight': [1, 2, 3, 4, 5, 6]}
+    cv_params = {'gamma': [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]}
     other_params = {'learning_rate': 0.1,# 学习率
                     'n_estimators': 400, # 迭代次数
-                    'max_depth': 5,# 深度
-                    'min_child_weight': 1, #子节点的权重
+                    'max_depth': 7,# 深度
+                    'min_child_weight': 6, #子节点的权重
                     'seed': 0,
                     'subsample': 0.8,
                     'colsample_bytree': 0.8,
