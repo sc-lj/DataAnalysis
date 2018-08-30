@@ -125,6 +125,6 @@ def xgboostPredict(testfile):
 
 
 if __name__ == '__main__':
-    xgboostparams()
-    # xgboostLinear()
+    # xgboostparams()
+    xgboostLinear()
     # xgboostPredict("../data/TapFunTest.csv")
