@@ -391,7 +391,9 @@ def pcaDecomposition(files):
     nonlevelvar = [column for column in columns if re.match('.+_level', column)]
     newdata=data[nonlevelvar]
     pca=PCA(n_components=0.98)
+    pca.fit(newdata)
     # newnonlevelvar=pca.fit_transform(newdata)
+    print(pca.explained_variance_ratio_)
     print(pca.explained_variance_)
     print(pca.n_components_)
     pca.get_covariance()
