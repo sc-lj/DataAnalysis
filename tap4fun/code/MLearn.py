@@ -16,8 +16,6 @@ from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectKBest
 from scipy.stats import pearsonr
 from sklearn.utils import shuffle
-import xgboost as xgb
-from xgboost import XGBRegressor,XGBClassifier
 from sklearn import metrics
 import os
 
@@ -49,7 +47,7 @@ def check_Row(files):
     zero_num = 0
     nonzero_num = 0
     for da in data.values:
-        da=list(da)[1:-1]
+        da=list(da)[:-1]
         del da[-3]
         newda=list(set(da))
         label=da[-1]
@@ -79,7 +77,7 @@ def checkColumn(files):
     :return:
     """
     data = pd.read_csv(files, index_col=0)
-    vars = data.columns[1:-1]
+    vars = data.columns[:-1]
     labelnum = 45988.
     willdrop = []
 
@@ -91,7 +89,32 @@ def checkColumn(files):
         if P > 0.05:
             willdrop.append(var)
         # print(var,',',median_add,',', label_add / labelnum)
+
     data.drop(willdrop,inplace=True,axis=1)
+    dropedvars = data.columns[:-1]
+
+    levelvar = [column for column in dropedvars if re.match('.+_level', column)]
+
+    willevelvar=[]
+    # 对level类型变量进行剔除
+    # level类型变量值大于0的样本数与在这些样本中标签值大于0的样本数的比例。计算level类型变量值大于0对标签大于0的贡献率
+    for var in levelvar:
+        loc = data[var].apply(lambda x: True if x > 0 else False)
+        sum = data.loc[loc, "prediction_pay_price"].apply(lambda x: 1 if x > 0 else 0).sum()
+        pros=float(sum)/loc.sum()
+        # pros越接近1，越表明当该变量大于0的样本其label越可能会大于0；如果为1，说明该变量有大于0的样本，其label全部大于0。
+        if pros==1:
+            willevelvar.append(var)
+        # print(var,',',median_add,',', label_add / labelnum)
+
+    """
+    这些变量大于0的样本，其label一定大于0
+    ['sr_troop_defense_level', 'sr_infantry_def_level', 'sr_cavalry_def_level', 'sr_shaman_def_level', 'sr_infantry_hp_level', 
+    'sr_cavalry_hp_level', 'sr_shaman_hp_level', 'sr_alliance_march_speed_level', 'sr_pvp_march_speed_level', 'sr_gathering_march_speed_level']
+    """
+
+    print(willevelvar)
+    data.drop(willevelvar,inplace=True,axis=1)
     data.to_csv(files)
 
 
@@ -188,7 +211,7 @@ def analysis_level_var(files):
     varvalue=X[var]
 
     Y=data[depvar]
-    data1=pd.concat([levelvalue,varvalue,Y],axis=1)
+    data=pd.concat([levelvalue,varvalue,Y],axis=1)
     # decimals_var = X.columns.tolist()[1:]
     # decimals=pd.Series([5]*len(decimals_var),index=decimals_var)
     data.to_csv(tapfun,float_format="%.5f")
@@ -286,6 +309,11 @@ def DealTestData(files):
 
     data.drop(willdrop,inplace=True,axis=1)
 
+    willevelvar=['sr_troop_defense_level', 'sr_infantry_def_level', 'sr_cavalry_def_level', 'sr_shaman_def_level', 'sr_infantry_hp_level',
+    'sr_cavalry_hp_level', 'sr_shaman_hp_level', 'sr_alliance_march_speed_level', 'sr_pvp_march_speed_level', 'sr_gathering_march_speed_level']
+
+    data.drop(willevelvar,inplace=True,axis=1)
+
     """
     增加列
     """
@@ -340,23 +368,21 @@ def DealTestData(files):
     X=pd.concat([X,new_data],axis=1)
     columns = X.columns.tolist()
 
-    # 根据变量的方差降维
-    invar = columns[1:]
-    othervar=columns[:1]
-    invarvalue=X[invar]
-    describe=invarvalue.std()
-    # 删除了自变量的方差小于0.1的变量。考虑到里面的level都是有序变量，所以方差设置的比较小
-    # 当方差阈值设置为0.5的时候，删除了45个变量，这些特征不发散。
-    var=describe[describe.apply(lambda x:True if x>0.5 else False)].index
+    nonlevelvar = [column for column in columns if not re.match('.+_level', column)]
+    nonlevelvalue=X[nonlevelvar]
+    levelvar = [column for column in columns if re.match('.+_level', column)]
+    levelvalue=X[levelvar]
+    nonleveldescribe=nonlevelvalue.std()
+    # 根据非level变量的方差进行降维
+    var=nonleveldescribe[nonleveldescribe.apply(lambda x:True if x>0.5 else False)].index
 
     varvalue=X[var]
-    othervalue=X[othervar]
 
     Y=data[depvar]
-    data=pd.concat([othervalue,varvalue,Y],axis=1)
+    data=pd.concat([levelvalue,varvalue,Y],axis=1)
     # decimals_var = X.columns.tolist()[1:]
     # decimals=pd.Series([5]*len(decimals_var),index=decimals_var)
-    data.to_csv('../data/TapFunTest.csv', float_format="%.5f")
+    data.to_csv(tapfun,float_format="%.5f")
 
 
 if __name__ == '__main__':
@@ -365,19 +391,19 @@ if __name__ == '__main__':
 
     """按照下面顺序执行"""
     # 删除行
-    # check_Row(tap_fun_train)
+    check_Row(tap_fun_train)
     # 删除列
-    # checkColumn(drop_zero)
+    checkColumn(drop_zero)
     # 增加列
-    # addColumn(drop_zero)
+    addColumn(drop_zero)
     # 标准化
     analysis_level_var(drop_zero)
     # 切分数据集
-    # cut_data(tapfun)
+    cut_data(tapfun)
 
     # getFeature(tapfun)
     # classify(drop_zero)
 
-    # DealTestData(tap_fun_test)
+    DealTestData(tap_fun_test)
 
 
