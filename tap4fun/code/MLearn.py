@@ -340,7 +340,6 @@ def DealTestData(files):
     """
 
     variable=data.columns.tolist()
-    depvar=variable[-1]#因变量有prediction_pay_price
     new_data=pd.DataFrame()
     X_var=variable[:-1]
 
@@ -377,9 +376,7 @@ def DealTestData(files):
     var=nonleveldescribe[nonleveldescribe.apply(lambda x:True if x>0.5 else False)].index
 
     varvalue=X[var]
-
-    Y=data[depvar]
-    data=pd.concat([levelvalue,varvalue,Y],axis=1)
+    data=pd.concat([levelvalue,varvalue],axis=1)
     # decimals_var = X.columns.tolist()[1:]
     # decimals=pd.Series([5]*len(decimals_var),index=decimals_var)
     data.to_csv(tapfun,float_format="%.5f")
