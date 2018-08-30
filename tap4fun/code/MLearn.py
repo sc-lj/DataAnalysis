@@ -399,17 +399,17 @@ def pcaDecomposition(files):
 
 
 if __name__ == '__main__':
-    pcaDecomposition(tapfun)
+    # pcaDecomposition(tapfun)
 
     """按照下面顺序执行"""
     # 删除行
-    # check_Row(tap_fun_train)
+    check_Row(tap_fun_train)
     # 删除列
-    # checkColumn(drop_zero)
+    checkColumn(drop_zero)
     # 增加列
-    # addColumn(drop_zero)
+    addColumn(drop_zero)
     # 标准化
-    # analysis_level_var(drop_zero)
+    analysis_level_var(drop_zero)
     # 切分数据集
     # cut_data(tapfun)
 
