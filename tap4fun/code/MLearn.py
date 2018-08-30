@@ -387,11 +387,10 @@ def hebin(files1,files2):
 
 def pcaDecomposition(files):
     data=pd.read_csv(files,index_col=0)
-    composition=data.shape[1]
     columns = data.columns.tolist()
     nonlevelvar = [column for column in columns if not re.match('.+_level', column)]
     newdata=data[nonlevelvar]
-    pca=PCA(n_components=composition-1,svd_solver='full')
+    pca=PCA(n_components=27)
     pca.fit(newdata)
     print(pca.explained_variance_)
 
