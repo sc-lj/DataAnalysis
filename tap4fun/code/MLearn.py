@@ -388,7 +388,7 @@ def hebin(files1,files2):
 def pcaDecomposition(files):
     data=pd.read_csv(files,index_col=0)
     columns = data.columns.tolist()
-    nonlevelvar = [column for column in columns if not re.match('.+_level', column)]
+    nonlevelvar = [column for column in columns if re.match('.+_level', column)]
     newdata=data[nonlevelvar]
     pca=PCA(n_components=0.98)
     # newnonlevelvar=pca.fit_transform(newdata)
