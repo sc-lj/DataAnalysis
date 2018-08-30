@@ -100,7 +100,7 @@ def xgboostLinear():
     X_train, Y_train=read_data(train_file)
     X_test,Y_test=read_data(valid_file)
     # XGBoost训练过程，下面的参数就是刚才调试出来的最佳参数组合
-    model = xgb.XGBRegressor(learning_rate=0.1, n_estimators=550, max_depth=4, min_child_weight=5, seed=0,
+    model = xgb.XGBRegressor(learning_rate=0.1, n_estimators=400, max_depth=4, min_child_weight=5, seed=0,
                              subsample=0.7, colsample_bytree=0.7, gamma=0.1, reg_alpha=1, reg_lambda=1)
     model.fit(X_train, Y_train)
     if not os.path.exists("./model/xgboost"):
@@ -127,6 +127,6 @@ def xgboostLinear():
 
 
 if __name__ == '__main__':
-    xgboostparams()
-
+    # xgboostparams()
+    xgboostLinear()
 
