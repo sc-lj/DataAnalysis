@@ -389,6 +389,7 @@ def pcaDecomposition(files):
     data=pd.read_csv(files,index_col=0)
     columns = data.columns.tolist()
     nonlevelvar = [column for column in columns if re.match('.+_level', column)]
+    print(len(nonlevelvar))
     newdata=data[nonlevelvar]
     pca=PCA(n_components=0.98)
     pca.fit(newdata)
